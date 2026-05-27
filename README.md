@@ -9,7 +9,13 @@ To write a program to implement the SVM For Spam Mail Detection.
 
 ## Algorithm
 
+1.Import the packages.
 
+2.Analyse the data.
+
+3.Use modelselection and Countvectorizer to preditct the values.
+
+4.Find the accuracy and display the result.
 
 ## Program:
 ```
@@ -21,66 +27,56 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+from sklearn.metrics import accuracy_score, confusion_matrix
+import matplotlib.pyplot as plt
 
-# ------------------------------
-# Step 1: Create dataset
-# ------------------------------
-data = {
-    'v1': ['ham','ham','spam','ham','ham'],
-    'v2': [
-        'Go until jurong point, crazy.. Available only in bugis n great world la e buffet... Cine there got amore wat...',
-        'Ok lar... Joking wif u oni...',
-        "Free entry in 2 a wkly comp to win FA Cup final tkts 21st May 2005. Text FA to 87121 to receive entry question(std txt rate)T&C's apply 08452810075over18's",
-        'U dun say so early hor... U c already then say...',
-        'Nah I don\'t think he goes to usf, he lives around here though'
-    ]
-}
+df = pd.read_csv("spam.csv", encoding='latin-1')
 
-df = pd.DataFrame(data)
+df = df[['v1', 'v2']]
 
-# ------------------------------
-# Step 2: Encode labels (ham=0, spam=1)
-# ------------------------------
-df['label'] = df['v1'].map({'ham':0, 'spam':1})
+df.columns = ['label', 'message']
 
-# ------------------------------
-# Step 3: Feature extraction (TF-IDF)
-# ------------------------------
-vectorizer = TfidfVectorizer(stop_words='english')
-X = vectorizer.fit_transform(df['v2'])
+df['label'] = df['label'].map({'ham':0, 'spam':1})
+
+X = df['message']
+
 y = df['label']
 
-# ------------------------------
-# Step 4: Train-test split
-# ------------------------------
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+tfidf = TfidfVectorizer(stop_words='english')
 
-# ------------------------------
-# Step 5: Train SVM classifier
-# ------------------------------
-svm_model = SVC(kernel='linear', C=1.0, random_state=42)
-svm_model.fit(X_train, y_train)
+X = tfidf.fit_transform(X)
 
-# ------------------------------
-# Step 6: Make predictions
-# ------------------------------
-y_pred = svm_model.predict(X_test)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
-# ------------------------------
-# Step 7: Evaluate the model
-# ------------------------------
-print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
-print("\nAccuracy Score:", accuracy_score(y_test, y_pred))
-print("\nClassification Report:\n", classification_report(y_test, y_pred))
+model = SVC(kernel='linear')
 
-# ------------------------------
-# Step 8: Predict new message
-# ------------------------------
-new_message = ["Congratulations! You have won a free ticket to Bahamas. Call now!"]
-new_message_vect = vectorizer.transform(new_message)
-prediction = svm_model.predict(new_message_vect)
-print(f"Prediction: {'Spam' if prediction[0]==1 else 'Ham'}")
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print("Accuracy:", accuracy_score(y_test, y_pred))
+
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+new_mail = ["Congratulations! You won a free iPhone"]
+
+new_mail = tfidf.transform(new_mail)
+
+prediction = model.predict(new_mail)
+
+if prediction[0] == 1:
+    print("Spam Mail")
+else:
+    print("Ham Mail")
+
+plt.bar(['Ham', 'Spam'], df['label'].value_counts().sort_index())
+
+plt.title("Spam Mail Dataset")
+
+plt.show()
 
 Developed by: Swathi P N
 RegisterNumber:  212225230279
